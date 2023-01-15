@@ -5,30 +5,52 @@ from point import Point
 from cursor import Cursor
 from digits import Digit
 
-def drawNumber(number):
+def drawImage(hours, minutes):
 	im = Image.new(IMAGE_MODE, (110, 110), "white")
 	c = Cursor(im)
 
 	# c.draw_box(Point(c.image_center.x, 0), Point(c.image_center.x, c.image_dim.y-1), color="red")
-	# c.Xsymmetry = True
+	c.Xsymmetry = True
 
-	c.point((25,50))
+	c.point((c.image_center.x+1,50))
 
-	for digit in str(int(number)):
-		c.draw_digit(Digit.atlas[int(digit)])
+	hours = str(int(hours))
+	if len(hours) == 1: hours = '0' + hours
+
+	minutes = str(int(minutes))
+	if len(minutes) == 1: minutes = '0' + minutes
+
+	for digit in hours:
+		c.draw_digit(Digit.atlas[digit])
+
+	offset = sum([Digit.atlas[digit].width for digit in minutes])
+	c.point((c.image_center.x-offset+1,57))
+
+	for digit in minutes:
+		c.draw_digit(Digit.atlas[digit])
 
 	return im
 
 
-number = 0
-def update_number(delta):
-	global number, label, imgTK
-	number += (delta/120)
+hours = 0
+minutes = 0
 
-	if number < 0: number = 0
-	elif number > 60: number = 60
+def update_time(e):
+	global hours, minutes, label, imgTK
 
-	image = drawNumber(number)
+	if e.y < 300:
+		hours += (e.delta/120)
+
+		if hours < 0: hours = 0
+		elif hours > 60: hours = 60
+
+	else:
+		minutes += (e.delta/120)
+
+		if minutes < 0: minutes = 0
+		elif minutes > 60: minutes = 60
+
+	image = drawImage(hours, minutes)
 	imgTK = ImageTk.PhotoImage(image.resize(imgHeight, resample=Image.NEAREST))
 
 	label.configure(image=imgTK)
@@ -40,11 +62,11 @@ root.resizable(False, False)
 root.update()
 imgHeight = (root.winfo_width(), root.winfo_height())
 
-image = drawNumber(number)
+image = drawImage(hours, minutes)
 imgTK = ImageTk.PhotoImage(image.resize(imgHeight, resample=Image.NEAREST))
 
 label = tk.Label(root, image=imgTK)
 label.pack(expand=True, fill="both")
-label.bind("<MouseWheel>", lambda e: update_number(e.delta))
+label.bind("<MouseWheel>", lambda e: update_time(e))
 
 root.mainloop()
